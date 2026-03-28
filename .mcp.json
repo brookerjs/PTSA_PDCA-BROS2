@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pensive-one": {
+      "type": "sse",
+      "url": "https://mcp.pensiveone.ca/sse"
+    }
+  }
+}
