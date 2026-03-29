@@ -56,10 +56,8 @@ export async function pullFromS3(config: S3Config): Promise<SyncResult> {
 
       // Parse and store structured data
       if (isRegisterFile(fileId)) {
-        const parsed = parseRegister(markdown);
-        // Store team members in register workstreams — handled by UI from raw file
-        // Register workstreams are summary-level, stored separately
-        // For now, the register data is accessed via re-parsing raw_markdown
+        // Register data is accessed via re-parsing raw_markdown when needed
+        parseRegister(markdown); // validate it parses cleanly
       } else {
         const parsed = parseIndividualPdca(markdown);
         await dbService.upsertWorkstreamsForFile(fileId, parsed.member_code, parsed.workstreams);

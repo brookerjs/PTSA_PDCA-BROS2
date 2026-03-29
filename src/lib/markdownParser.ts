@@ -34,9 +34,6 @@ function parseActionLabel(text: string): ActionLabel {
   return 'todo';
 }
 
-function trimCell(cell: string): string {
-  return cell.trim().replace(/^\||\|$/g, '').trim();
-}
 
 function parseTableRows(tableBlock: string): string[][] {
   const lines = tableBlock.split('\n').filter((l) => l.trim().startsWith('|'));
