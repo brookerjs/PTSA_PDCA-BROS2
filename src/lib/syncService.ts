@@ -70,6 +70,22 @@ export async function pullFromS3(config: S3Config): Promise<SyncResult> {
     }
   }
 
+  // Clean up local entries for files no longer in the filtered S3 listing
+  const remoteFileIds = new Set(remoteFiles.map((f) => fileIdFromKey(f.key)));
+  const localFiles = await dbService.getAllFiles();
+  for (const local of localFiles) {
+    if (!remoteFileIds.has(local.id) && local.is_dirty !== 1) {
+      // Remove orphaned workstreams/actions, then the file record
+      const orphanedWs = await db.workstreams.where('file_id').equals(local.id).toArray();
+      const orphanedWsIds = orphanedWs.map((w) => w.id!).filter(Boolean);
+      if (orphanedWsIds.length > 0) {
+        await db.actions.where('workstream_id').anyOf(orphanedWsIds).delete();
+      }
+      await db.workstreams.where('file_id').equals(local.id).delete();
+      await db.files.delete(local.id);
+    }
+  }
+
   return result;
 }
 
