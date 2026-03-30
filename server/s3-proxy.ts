@@ -87,7 +87,12 @@ export default function s3ProxyPlugin(): Plugin {
                 }),
               );
               const files = (response.Contents ?? [])
-                .filter((obj) => obj.Key?.endsWith('.md'))
+                .filter((obj) => {
+                  if (!obj.Key?.endsWith('.md')) return false;
+                  const filename = obj.Key.split('/').pop() ?? '';
+                  return /^TEAM-OPS-PDCA-/.test(filename) ||
+                    filename === 'TEAM-OPS-Active-PDCA-Register.md';
+                })
                 .map((obj) => ({
                   key: obj.Key!,
                   lastModified: obj.LastModified?.toISOString() ?? null,
