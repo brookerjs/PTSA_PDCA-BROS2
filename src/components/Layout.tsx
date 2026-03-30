@@ -15,9 +15,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
       {/* Top bar */}
       <header className="bg-navy text-white px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white/20 rounded flex items-center justify-center text-xs font-bold">
-            PT
-          </div>
+          <img src="/pt-monogram.png" alt="Premier Tech" className="w-8 h-8 rounded" />
           <div>
             <h1 className="text-base font-semibold leading-tight">BROS2 PDCA</h1>
             <p className="text-xs text-white/60">Premier Tech Systems & Automation</p>
