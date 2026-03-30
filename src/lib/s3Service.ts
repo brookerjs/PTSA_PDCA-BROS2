@@ -1,12 +1,8 @@
-import {
-  S3Client,
-  ListObjectsV2Command,
-  GetObjectCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3';
 import type { S3Config } from '../types';
 
 const CONFIG_KEY = 'pdca-s3-config';
+
+// === localStorage operations (unchanged) ===
 
 export function saveS3Config(config: S3Config): void {
   localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
@@ -22,81 +18,64 @@ export function loadS3Config(): S3Config | null {
   }
 }
 
-function createClient(config: S3Config): S3Client {
-  return new S3Client({
-    region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
-  });
-}
-
-export async function testConnection(config: S3Config): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const client = createClient(config);
-    await client.send(
-      new ListObjectsV2Command({
-        Bucket: config.bucket,
-        Prefix: config.prefix,
-        MaxKeys: 1,
-      })
-    );
-    return { ok: true };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Erreur inconnue';
-    return { ok: false, error: message };
-  }
-}
+// === S3 operations via dev server proxy ===
+// NOTE: These endpoints only work in development (vite dev).
+// For production, a real backend or fixed S3 CORS is required.
 
 export interface S3FileEntry {
   key: string;
   lastModified: Date | undefined;
 }
 
-export async function listFiles(config: S3Config): Promise<S3FileEntry[]> {
-  const client = createClient(config);
-  const response = await client.send(
-    new ListObjectsV2Command({
-      Bucket: config.bucket,
-      Prefix: config.prefix,
-    })
-  );
-
-  if (!response.Contents) return [];
-
-  return response.Contents
-    .filter((obj) => obj.Key?.endsWith('.md'))
-    .map((obj) => ({
-      key: obj.Key!,
-      lastModified: obj.LastModified,
-    }));
+async function proxyPost<T>(endpoint: string, body: unknown): Promise<T> {
+  const res = await fetch(`/api/s3/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`S3 proxy error (${res.status}): ${text}`);
+  }
+  return res.json() as Promise<T>;
 }
 
-export async function getFileContent(config: S3Config, key: string): Promise<string> {
-  const client = createClient(config);
-  const response = await client.send(
-    new GetObjectCommand({
-      Bucket: config.bucket,
-      Key: key,
-    })
-  );
+export async function testConnection(
+  config: S3Config,
+): Promise<{ ok: boolean; error?: string }> {
+  return proxyPost<{ ok: boolean; error?: string }>('test', config);
+}
 
-  return (await response.Body?.transformToString('utf-8')) ?? '';
+export async function listFiles(config: S3Config): Promise<S3FileEntry[]> {
+  const data = await proxyPost<{
+    files: { key: string; lastModified: string | null }[];
+  }>('list', config);
+
+  return data.files.map((f) => ({
+    key: f.key,
+    lastModified: f.lastModified ? new Date(f.lastModified) : undefined,
+  }));
+}
+
+export async function getFileContent(
+  config: S3Config,
+  key: string,
+): Promise<string> {
+  const data = await proxyPost<{ content: string }>('get', {
+    ...config,
+    key,
+  });
+  return data.content;
 }
 
 export async function putFileContent(
   config: S3Config,
   key: string,
-  content: string
+  content: string,
 ): Promise<void> {
-  const client = createClient(config);
-  await client.send(
-    new PutObjectCommand({
-      Bucket: config.bucket,
-      Key: key,
-      Body: content,
-      ContentType: 'text/markdown; charset=utf-8',
-    })
-  );
+  await proxyPost<{ ok: boolean }>('put', {
+    ...config,
+    key,
+    content,
+  });
 }
