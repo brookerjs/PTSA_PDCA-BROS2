@@ -17,14 +17,21 @@ export default function Register() {
   const files = useLiveQuery(() => db.files.toArray(), []) ?? [];
   const allWorkstreams = useLiveQuery(() => db.workstreams.toArray(), []) ?? [];
 
-  // Parse team members from the register file
+  // Parse team members from the register file, plus BROS2 as owner
   const team: TeamMember[] = useMemo(() => {
+    const bros2: TeamMember = {
+      code: 'BROS2',
+      name: 'Scott',
+      role: 'Dir. Programmes',
+      temperature: localStorage.getItem('pdca-bros2-temperature') ?? '',
+    };
     const registerFile = files.find((f) => f.id.toLowerCase().includes('register'));
-    if (!registerFile) return [];
+    if (!registerFile) return [bros2];
     try {
-      return parseRegister(registerFile.raw_markdown).team;
+      const parsed = parseRegister(registerFile.raw_markdown).team;
+      return [bros2, ...parsed];
     } catch {
-      return [];
+      return [bros2];
     }
   }, [files]);
 
@@ -34,11 +41,18 @@ export default function Register() {
     [files]
   );
 
-  // Filter workstreams
+  // Filter workstreams — BROS2 filters by lead, others by member_code
+  const matchesMember = (w: typeof allWorkstreams[number], code: string) => {
+    if (code === 'BROS2') {
+      return w.lead.includes('BROS2') || w.member_code === 'BROS2';
+    }
+    return w.member_code === code;
+  };
+
   const filtered = useMemo(() => {
     let ws = allWorkstreams;
     if (selectedMember) {
-      ws = ws.filter((w) => w.member_code === selectedMember);
+      ws = ws.filter((w) => matchesMember(w, selectedMember));
     }
     if (selectedStatus !== 'all') {
       ws = ws.filter((w) => w.status === selectedStatus);
@@ -49,7 +63,7 @@ export default function Register() {
   // Counts for status pills
   const counts = useMemo(() => {
     const base = selectedMember
-      ? allWorkstreams.filter((w) => w.member_code === selectedMember)
+      ? allWorkstreams.filter((w) => matchesMember(w, selectedMember))
       : allWorkstreams;
     return {
       all: base.length,
@@ -97,6 +111,10 @@ export default function Register() {
             key={m.code}
             member={m}
             isSelected={selectedMember === m.code}
+            editable={m.code === 'BROS2'}
+            onTemperatureChange={m.code === 'BROS2' ? (value) => {
+              localStorage.setItem('pdca-bros2-temperature', value);
+            } : undefined}
             onClick={() =>
               setSelectedMember(selectedMember === m.code ? null : m.code)
             }
