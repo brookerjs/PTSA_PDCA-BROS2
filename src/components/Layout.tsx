@@ -49,6 +49,9 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
             <Settings size={18} />
             Parametres
           </button>
+          <div className="mt-auto px-4 py-3">
+            <p className="text-[10px] text-gray-300">Build 8</p>
+          </div>
         </nav>
 
         {/* Main content */}
