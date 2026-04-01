@@ -520,13 +520,15 @@ Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but 
 | Type mismatch on `useLiveQuery` in DetailPanel.tsx | 5 | 5 | TS2322 | Medium (won't compile) |
 | Unused import `Workstream` in Register.tsx | 5 | 5 | TS6196 | Low (lint) |
 
-### Runtime / Integration Bugs Found: 3 (Build 7)
+### Runtime / Integration Bugs Found: 3 (Build 7) + 2 (Build 9 code review)
 
 | Bug | Build Found | Type | Severity |
 |---|---|---|---|
 | S3 CORS preflight returns HTTP 500 | 7 | Infrastructure | Critical (blocks all sync) |
 | Phantom workstreams from non-PDCA files | 7 | Data boundary | Medium (wrong data displayed) |
 | Orphaned local workstreams after S3 filter | 7 | Sync logic | Medium (stale data persists) |
+| XSS via `dangerouslySetInnerHTML` in BuildNotes | 9 (review) | Security | Medium-High (injection risk) |
+| Temperature edits not synced back to S3 on push | 9 (review) | Data integrity | Medium (silent data loss) |
 
 ### Key Coaching Observations (Builds 7–9)
 
@@ -544,6 +546,30 @@ Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but 
 
 ---
 
-*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 added*
+## Build 9 Code Review — Bugs Found and Fixed
+
+The Build 9 feature branch (`claude/build-9-WJ75c`) was generated in a co-work session on claude.ai (iPad). Before merging to `main`, a code review in Claude Code surfaced two bugs.
+
+### Bug: XSS via `dangerouslySetInnerHTML` in BuildNotes.tsx
+- **Discovered during:** Code review of Build 9 feature branch
+- **Root cause:** The `inlineMarkdown()` function converted `**bold**` to `<strong>` tags and injected the result via `dangerouslySetInnerHTML` without first escaping HTML entities. Any `<script>` or `<img onerror=...>` in release notes markdown would execute as HTML.
+- **Fix:** Added `escapeHtml()` function that escapes `&`, `<`, `>`, `"` before applying bold formatting. HTML entities are neutralized before injection.
+- **Coaching lesson:** *Never use `dangerouslySetInnerHTML` without sanitization — even when the data source is "trusted." Defense-in-depth means treating every rendering boundary as a potential attack surface. The fix is simple (5 lines), but the vulnerability is real.*
+
+### Bug: Temperature edits not synced back to S3 on push
+- **Discovered during:** Code review — tracing the data flow from UI edit through push
+- **Root cause:** Temperature edits saved to Dexie's `temperatures` table and marked the PDCA file dirty. But `pushToS3` rebuilt the markdown from `parseIndividualPdca(file.raw_markdown)` — which contained the **old** temperature in `role_context`. The updated temperature was never injected back before serializing. Result: temperature edits appeared correct locally but were silently lost on the next S3 sync cycle.
+- **Fix:** In both `pushToS3` and `resolveConflictKeepLocal`, read the current temperature from Dexie and replace the temperature line in `role_context` before serializing to markdown.
+- **Coaching lesson:** *When structured data is stored separately from its serialized form (Dexie table vs. markdown prose), the push path must reconcile both sources. This is a classic "read path works, write path doesn't" bug — easy to miss because the UI always shows the correct value from the structured store. Only the round-trip through S3 reveals the gap. For PMs: acceptance criteria for "editable with sync" must explicitly test the full cycle: edit → push → pull → verify the edit persists.*
+
+### Key Coaching Observations (Build 9 Code Review)
+
+13. **Code review catches what tests miss.** The 49 automated tests all passed, TypeScript compiled clean, but two significant bugs were only visible through manual code review — one security vulnerability and one data integrity issue. Automated tests validate expected behavior; code review validates unexpected behavior. Both are necessary.
+
+14. **AI-generated code requires the same review rigor as human code.** The Build 9 feature branch was generated in a co-work session on an iPad. The code quality was generally high — it followed existing patterns, added meaningful tests, and compiled cleanly. But it still contained an XSS vulnerability and an incomplete sync implementation. The lesson for PMs: AI-assisted development compresses *writing* time, not *review* time. Budget for code review regardless of who (or what) wrote the code.
+
+---
+
+*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs added*
 *Original document: 2026-03-29 | Session: claude/markdown-parser-ui-yU8Al*
 *Update session: claude/build-9-summary-notes-airDj*
