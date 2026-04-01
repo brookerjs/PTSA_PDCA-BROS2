@@ -7,11 +7,13 @@
 **Branch:** `claude/markdown-parser-ui-yU8Al`
 **Stack:** Vite 8 + React 19 + TypeScript 5.9 + Dexie (IndexedDB) + TailwindCSS 4 + AWS SDK v3
 **Test Framework:** Vitest 4.1.2
-**Total Automated Tests:** 41 (all passing)
+**Total Automated Tests:** 49 (all passing)
 
 ---
 
 ## How to Read This Document
+
+> **Note on terminology:** Iterations 1–6 were built in a single continuous session and use the term "Iteration." Starting with Build 7, each delivery became a distinct session with its own branch and tag, so we switched to "Build." The terms are interchangeable — both represent a single incremental delivery of working software.
 
 This document traces the full build of a real product, iteration by iteration. For each iteration you will find:
 
@@ -355,7 +357,7 @@ No new automated tests. TypeScript strict check + regression.
 | Type mismatch on `useLiveQuery` in DetailPanel.tsx | 5 | 5 | TS2322 | Medium (won't compile) |
 | Unused import `Workstream` in Register.tsx | 5 | 5 | TS6196 | Low (lint) |
 
-### Key Coaching Observations
+### Key Coaching Observations (Iterations 1–6)
 
 1. **Riskiest-first build order works.** The parser was the most complex and ambiguous piece. Building and testing it first (with real data fixtures) meant all downstream layers could trust the data shape.
 
@@ -371,4 +373,207 @@ No new automated tests. TypeScript strict check + regression.
 
 ---
 
-*Document generated: 2026-03-29 | BROS2 Team Operations | Session: claude/markdown-parser-ui-yU8Al*
+## Build 7 — Integration Hardening & Production Readiness
+**Commits:** `64a346b`, `17ddba1`, `f3310ff`, `7822122`, `35b2214` — 2026-03-29
+**Theme:** Wiring the app end-to-end against live S3, fixing everything that broke on first contact with real infrastructure.
+
+### Features
+- **ConflictDialog wired into SyncBar** — SyncBar now automatically surfaces the ConflictDialog when a pull detects conflicts (dirty local files vs newer S3 versions). Previously the dialog existed but was not connected.
+- **Vite server-side S3 proxy** — S3 returned HTTP 500 on all CORS preflight (OPTIONS) requests for the pensiveone-main bucket. Root cause was an AWS-side issue, not a code bug. Fix: route all S3 operations through a Vite dev server middleware (`server/s3-proxy.ts`) running the AWS SDK in Node.js. Browser-side `s3Service.ts` now calls `fetch('/api/s3/...')` instead of the AWS SDK directly. All exported function signatures preserved — zero changes to consumers.
+- **Official PT monogram logo** — Replaced text PT badge with official Premier Tech monogram PNG. Updated navy color (#0D2D5E → #041e42) to match PT brand guidelines.
+- **S3 file listing filter** — Non-PDCA files in the S3 prefix (coaching notes, competency frameworks, language conventions) were being parsed as workstreams, creating phantom entries (e.g. "Empathy", "Phraseologie contrastive", "Tirets cadratins"). Now only files matching `TEAM-OPS-PDCA-*` and the active register are loaded.
+- **Orphan workstream pruning** — After pulling the filtered S3 file list, local files, workstreams, and actions that no longer appear in the listing are removed from IndexedDB. Dirty files are preserved to protect unsaved local edits.
+- **Removed Vite boilerplate assets** — hero.png, react.svg, vite.svg, icons.svg all removed.
+
+### User Stories
+- *As BROS2, I need sync conflicts to surface automatically so I don't lose local edits when S3 has a newer version.*
+- *As BROS2, I need the app to work despite S3 CORS failures so I can sync without waiting for AWS to fix their side.*
+- *As BROS2, I need only my PDCA workstream files to appear in the app — not coaching notes, language guides, or other markdown in the same S3 prefix.*
+- *As BROS2, I need workstreams that have been deleted from S3 to disappear from my local app after a sync.*
+
+### Tests
+
+| Check | Result |
+|---|---|
+| `npx tsc -b --noEmit` (TypeScript strict) | PASS |
+| All 41 parser tests | PASS |
+| Production build (`npm run build`) | PASS |
+
+### Bugs Found and Fixed
+
+#### Bug: S3 CORS preflight returns HTTP 500
+- **Discovered during:** First live sync attempt against pensiveone-main bucket
+- **Root cause:** AWS-side issue — S3 returns 500 on OPTIONS requests for this bucket. Not a code bug. Browser-to-S3 direct calls cannot work until AWS resolves it.
+- **Fix:** Server-side proxy in Vite dev middleware (`server/s3-proxy.ts`). Browser calls `fetch('/api/s3/...')`; Node.js runs the AWS SDK without CORS.
+- **Coaching lesson:** *Infrastructure assumptions fail on first contact. The spec assumed browser-to-S3 direct access. Having a clean service interface (all consumers call the same functions) meant the proxy could be inserted without any UI changes.*
+
+#### Bug: Phantom workstreams from non-PDCA files
+- **Discovered during:** First live sync — sidebar showed entries like "Empathy", "Phraseologie contrastive"
+- **Root cause:** `listFiles()` returned every `.md` file under the S3 prefix, including non-PDCA documents. The parser tried to parse them and created garbage workstreams.
+- **Fix:** Filter `listFiles()` results to only include files matching `TEAM-OPS-PDCA-*` pattern and the register file.
+- **Coaching lesson:** *Always filter at the data boundary. Don't assume the bucket only contains your files — shared storage means shared responsibility for filtering.*
+
+#### Bug: Orphaned local workstreams after S3 file deletion
+- **Discovered during:** After applying the S3 filter, phantom entries persisted in IndexedDB from the previous unfiltered sync
+- **Root cause:** Sync pull only upserted new/changed files — it never removed local entries whose S3 source no longer existed
+- **Fix:** After pull, compare local file_ids against the S3 listing and delete any that are missing (except dirty files)
+- **Coaching lesson:** *Sync is not just "copy down." A robust sync must handle additions, updates, AND deletions. Protecting dirty files during pruning shows defensive thinking.*
+
+---
+
+## Build 8 — BROS2 Director View & Version Identity
+**Commits:** `c50b7ac`, `5eb0569`, `87794a9` — 2026-03-31
+**Theme:** Making the app work for Scott (BROS2) as a director who oversees all equipiers, not just as an equipier himself.
+
+### Features
+- **BROS2 as equipier with lead-based filtering** — BROS2 (Scott, Dir. Programmes) appears as the first card in the team sidebar. Clicking BROS2 filters workstreams where the `lead` field contains "BROS2" (cross-cutting view of all workstreams Scott is involved in). Other equipiers still filter by `member_code` as before.
+- **Editable temperature for BROS2** — BROS2's temperature is editable inline via a pencil icon on the card. Persisted in localStorage. Other equipiers' temperatures come from their PDCA files and are read-only.
+- **Build number in UI** — Initially displayed as "Build 8" at the bottom of the side navigation (`package.json` version `0.0.8`). Later moved to the header (right of "BROS2 PDCA") and reformatted to `v0.8.1` semver.
+- **Semantic versioning adopted** — Moved from ad-hoc "Build N" numbering to semver. Retroactively tagged all builds v0.1.0–v0.8.0, then patched to v0.8.1 for the header move.
+
+### User Stories
+- *As BROS2 (director), I need to see all workstreams where I'm listed as lead, across all equipiers, so I can track my cross-cutting responsibilities.*
+- *As BROS2, I need my own temperature to be editable since it's not derived from a PDCA file like my direct reports.*
+- *As BROS2, I need to see the current version number so I can reference it when reporting issues or requesting features.*
+
+### Tests
+
+| Check | Result |
+|---|---|
+| `npx tsc -b --noEmit` (TypeScript strict) | PASS |
+| All 41 parser tests | PASS |
+
+### Bugs Found and Fixed: None
+
+---
+
+## Appendix — BROS2 PDCA Data File Creation (2026-03-31)
+
+After deploying Build 8, the BROS2 equipier card showed 0 workstreams. Investigation revealed that while the app code was correct, no `TEAM-OPS-PDCA-BROS2.md` data file existed in S3. The other team members (BARA2, CHOY, JUNC, GAGL2) each had individual PDCA files; BROS2 did not.
+
+### What was done
+
+1. Created `TEAM-OPS-PDCA-BROS2.md` in the vault at `Projects/Professional/BROS2 Team Operations Claude Project/`, using the same markdown format as the existing individual PDCA files.
+2. Copied the 2 BROS2 R-responsible workstreams from the consolidated register (`TEAM-OPS-Active-PDCA-Register.md`): OPX X-Matrix (#12) and PTSA Portfolio (#16).
+3. Ran pensync to push the new file to S3, then synced in the app. Both workstreams appeared correctly.
+
+### Design decision: R-responsible vs A-accountable
+
+During this session, we considered also adding workstreams where BROS2 is Lead/Accountable but not R opérationnel (e.g., Renouvellement Salesforce, SAS Web panne). After testing, we decided to keep the current model: **R opérationnel owns the workstream on their card.** BROS2 has visibility across all cards as the manager. This is cleaner and avoids duplicating workstreams across multiple team members.
+
+A future feature may capture the A-accountable relationship explicitly in the app, but for now the register's consolidated table provides that accountability view.
+
+### Coaching observation
+
+**Data and code are co-dependencies.** A working app with no data file produces the same result as a broken app — nothing on screen. Testing a feature end-to-end means verifying both the code path and the data path. In this case, the code was correct (Build 8 filtering logic worked) but the data was missing (no BROS2 PDCA file in S3). This is a common pattern in data-driven apps: always verify that the data exists, is in the expected format, and is reachable through the full pipeline (local file → pensync → S3 → app proxy → parser → IndexedDB → UI).
+
+---
+
+## Build 9 — Session Summary & Coaching Note Update
+**Branch:** `claude/build-9-summary-notes-airDj`
+**Date:** 2026-04-01
+**Theme:** Documentation catch-up — capturing the build history for Builds 7 and 8 that occurred after the original coaching note was written.
+
+### What This Build Covers
+Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but were not documented in the coaching note. This build adds complete traceability for those iterations, including features, user stories, bugs found, and coaching lessons.
+
+### Tests
+
+| Check | Result |
+|---|---|
+| `npx tsc -b --noEmit` (TypeScript strict) | PASS |
+| All 41 parser tests | PASS |
+
+### Bugs Found and Fixed: None
+
+---
+
+## Updated Summary — Test Results Across All Builds
+
+### Automated Tests: 49 total, 49 passing (41 from Iteration 1 + 8 from Build 9)
+
+| Suite | Tests | Status |
+|---|---|---|
+| parseIndividualPdca — all files parse | 4 | All PASS |
+| workstream counts | 4 | All PASS |
+| global_status | 4 | All PASS |
+| header parsing | 3 | All PASS |
+| action label mapping | 4 | All PASS |
+| null phase_a | 4 | All PASS |
+| long action tables | 1 | PASS |
+| long action text | 1 | PASS |
+| special characters in titles | 1 | PASS |
+| lien_ga | 3 | All PASS |
+| note_politique | 1 | PASS |
+| status suffix stripping | 2 | All PASS |
+| notes section skipped | 1 | PASS |
+| temperature | 1 | PASS |
+| parseRegister | 3 | All PASS |
+| round-trip: parse -> serialize -> parse | 4 | All PASS |
+
+### All Compile-Time Bugs Found: 4 (Iterations 1–6) + 0 (Builds 7–9)
+
+| Bug | Build Found | Build Introduced | Type | Severity |
+|---|---|---|---|---|
+| Unused variable `parsed` in syncService.ts | 4 | 3 | TS6133 | Low (lint) |
+| Unused function `trimCell` in markdownParser.ts | 4 | 1 | TS6133 | Low (lint) |
+| Type mismatch on `useLiveQuery` in DetailPanel.tsx | 5 | 5 | TS2322 | Medium (won't compile) |
+| Unused import `Workstream` in Register.tsx | 5 | 5 | TS6196 | Low (lint) |
+
+### Runtime / Integration Bugs Found: 3 (Build 7) + 2 (Build 9 code review)
+
+| Bug | Build Found | Type | Severity |
+|---|---|---|---|
+| S3 CORS preflight returns HTTP 500 | 7 | Infrastructure | Critical (blocks all sync) |
+| Phantom workstreams from non-PDCA files | 7 | Data boundary | Medium (wrong data displayed) |
+| Orphaned local workstreams after S3 filter | 7 | Sync logic | Medium (stale data persists) |
+| XSS via `dangerouslySetInnerHTML` in BuildNotes | 9 (review) | Security | Medium-High (injection risk) |
+| Temperature edits not synced back to S3 on push | 9 (review) | Data integrity | Medium (silent data loss) |
+
+### Key Coaching Observations (Builds 7–9)
+
+7. **First contact with live infrastructure always reveals new bugs.** Iterations 1–6 were built and tested in isolation (parser fixtures, TypeScript checks). Build 7 was the first sync against a real S3 bucket, and three bugs surfaced immediately. This is normal and expected — the value of small iterations is that these bugs are easy to isolate and fix.
+
+8. **Proxy patterns protect your architecture from infrastructure failures.** The CORS failure was not a code bug — it was an AWS-side issue. Instead of waiting for AWS, a server-side proxy was inserted behind the existing service interface. Zero consumer code changed. This is only possible when you have clean interface boundaries (which Iteration 3 established).
+
+9. **Filter at the data boundary, not in the UI.** Phantom workstreams appeared because the S3 listing was unfiltered. The fix was in the proxy (data boundary), not in the Register page (UI). Filtering early prevents garbage from propagating through the entire stack.
+
+10. **Sync must handle deletions, not just additions.** The orphan pruning bug is a classic — sync logic that only adds/updates will accumulate stale data over time. A robust sync compares the local set against the remote set and removes what's no longer present, while protecting unsaved work (dirty files).
+
+11. **Directors and operators need different views of the same data.** Build 8 introduced a subtle but important distinction: BROS2 filters by `lead` (cross-cutting), while equipiers filter by `member_code` (their own files). Same UI component, different query logic. This is a product design pattern worth noting — role-based filtering often appears simple but has real data-model implications.
+
+12. **Documentation is a deliverable, not an afterthought.** Builds 7 and 8 shipped real features and bug fixes but were not documented until Build 9. In a coaching context, undocumented work is invisible work — it can't be reviewed, studied, or learned from. Treat the build history as part of the definition of done.
+
+---
+
+## Build 9 Code Review — Bugs Found and Fixed
+
+The Build 9 feature branch (`claude/build-9-WJ75c`) was generated in a co-work session on claude.ai (iPad). Before merging to `main`, a code review in Claude Code surfaced two bugs.
+
+### Bug: XSS via `dangerouslySetInnerHTML` in BuildNotes.tsx
+- **Discovered during:** Code review of Build 9 feature branch
+- **Root cause:** The `inlineMarkdown()` function converted `**bold**` to `<strong>` tags and injected the result via `dangerouslySetInnerHTML` without first escaping HTML entities. Any `<script>` or `<img onerror=...>` in release notes markdown would execute as HTML.
+- **Fix:** Added `escapeHtml()` function that escapes `&`, `<`, `>`, `"` before applying bold formatting. HTML entities are neutralized before injection.
+- **Coaching lesson:** *Never use `dangerouslySetInnerHTML` without sanitization — even when the data source is "trusted." Defense-in-depth means treating every rendering boundary as a potential attack surface. The fix is simple (5 lines), but the vulnerability is real.*
+
+### Bug: Temperature edits not synced back to S3 on push
+- **Discovered during:** Code review — tracing the data flow from UI edit through push
+- **Root cause:** Temperature edits saved to Dexie's `temperatures` table and marked the PDCA file dirty. But `pushToS3` rebuilt the markdown from `parseIndividualPdca(file.raw_markdown)` — which contained the **old** temperature in `role_context`. The updated temperature was never injected back before serializing. Result: temperature edits appeared correct locally but were silently lost on the next S3 sync cycle.
+- **Fix:** In both `pushToS3` and `resolveConflictKeepLocal`, read the current temperature from Dexie and replace the temperature line in `role_context` before serializing to markdown.
+- **Coaching lesson:** *When structured data is stored separately from its serialized form (Dexie table vs. markdown prose), the push path must reconcile both sources. This is a classic "read path works, write path doesn't" bug — easy to miss because the UI always shows the correct value from the structured store. Only the round-trip through S3 reveals the gap. For PMs: acceptance criteria for "editable with sync" must explicitly test the full cycle: edit → push → pull → verify the edit persists.*
+
+### Key Coaching Observations (Build 9 Code Review)
+
+13. **Code review catches what tests miss.** The 49 automated tests all passed, TypeScript compiled clean, but two significant bugs were only visible through manual code review — one security vulnerability and one data integrity issue. Automated tests validate expected behavior; code review validates unexpected behavior. Both are necessary.
+
+14. **AI-generated code requires the same review rigor as human code.** The Build 9 feature branch was generated in a co-work session on an iPad. The code quality was generally high — it followed existing patterns, added meaningful tests, and compiled cleanly. But it still contained an XSS vulnerability and an incomplete sync implementation. The lesson for PMs: AI-assisted development compresses *writing* time, not *review* time. Budget for code review regardless of who (or what) wrote the code.
+
+15. **Switching AI coding partners mid-build is like switching suppliers mid-mandate.** The Build 9 code was generated in claude.ai (iPad co-work), then reviewed and fixed in Claude Code (MacBook). Each AI context has different strengths, but the handoff between them is where quality drops. The receiving context doesn't share the generating context's assumptions or blind spots. For PMs: when work crosses context boundaries — between AI tools, teams, or suppliers — that boundary is your highest-risk zone. Budget review time at every handoff.
+
+16. **Automated tests validate expected behavior. Code review validates unexpected behavior.** 49 tests passed. TypeScript compiled clean. Two significant bugs remained. Tests prove the code does what you intended. Reviews ask whether your intentions were complete. Both are necessary — neither is sufficient alone.
+
+---
+
+*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs added*
+*Original document: 2026-03-29 | Session: claude/markdown-parser-ui-yU8Al*
+*Update session: claude/build-9-summary-notes-airDj*
