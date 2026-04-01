@@ -17,7 +17,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         <div className="flex items-center gap-3">
           <img src="/pt-monogram.png" alt="Premier Tech" className="w-8 h-8 rounded" />
           <div>
-            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.9.0</span></h1>
+            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.9.1</span></h1>
             <p className="text-xs text-white/60">Premier Tech Systems & Automation</p>
           </div>
         </div>
