@@ -91,6 +91,7 @@ export default function s3ProxyPlugin(): Plugin {
                   if (!obj.Key?.endsWith('.md')) return false;
                   const filename = obj.Key.split('/').pop() ?? '';
                   return /^TEAM-OPS-PDCA-/.test(filename) ||
+                    /^BROS2-PDCA-Release-/.test(filename) ||
                     filename === 'TEAM-OPS-Active-PDCA-Register.md';
                 })
                 .map((obj) => ({
