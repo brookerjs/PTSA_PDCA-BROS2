@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { parseRegister } from '../lib/markdownParser';
+import { setTemperature } from '../lib/dbService';
 import TeamMemberCard from '../components/TeamMemberCard';
 import StatusPill from '../components/StatusPill';
 import WorkstreamRow from '../components/WorkstreamRow';
@@ -13,27 +14,42 @@ export default function Register() {
   const [selectedStatus, setSelectedStatus] = useState<WorkstreamStatus | 'all'>('all');
   const [selectedWsId, setSelectedWsId] = useState<number | null>(null);
 
-  // Live query: all files + workstreams from Dexie
+  // Live query: all files + workstreams + temperatures from Dexie
   const files = useLiveQuery(() => db.files.toArray(), []) ?? [];
   const allWorkstreams = useLiveQuery(() => db.workstreams.toArray(), []) ?? [];
+  const temperatures = useLiveQuery(() => db.temperatures.toArray(), []) ?? [];
+
+  // Migrate BROS2 temperature from localStorage to Dexie (once)
+  useEffect(() => {
+    const legacy = localStorage.getItem('pdca-bros2-temperature');
+    if (legacy) {
+      setTemperature('BROS2', legacy).then(() => {
+        localStorage.removeItem('pdca-bros2-temperature');
+      });
+    }
+  }, []);
 
   // Parse team members from the register file, plus BROS2 as owner
   const team: TeamMember[] = useMemo(() => {
+    const tempMap = new Map(temperatures.map((t) => [t.member_code, t.value]));
     const bros2: TeamMember = {
       code: 'BROS2',
       name: 'Scott',
       role: 'Dir. Programmes',
-      temperature: localStorage.getItem('pdca-bros2-temperature') ?? '',
+      temperature: tempMap.get('BROS2') ?? '',
     };
     const registerFile = files.find((f) => f.id.toLowerCase().includes('register'));
     if (!registerFile) return [bros2];
     try {
-      const parsed = parseRegister(registerFile.raw_markdown).team;
+      const parsed = parseRegister(registerFile.raw_markdown).team.map((m) => ({
+        ...m,
+        temperature: tempMap.get(m.code) ?? m.temperature,
+      }));
       return [bros2, ...parsed];
     } catch {
       return [bros2];
     }
-  }, [files]);
+  }, [files, temperatures]);
 
   // Track dirty file IDs
   const dirtyFileIds = useMemo(
@@ -41,10 +57,10 @@ export default function Register() {
     [files]
   );
 
-  // Filter workstreams — BROS2 filters by lead, others by member_code
+  // Filter workstreams — BROS2 filters by accountable/lead, others by member_code
   const matchesMember = (w: typeof allWorkstreams[number], code: string) => {
     if (code === 'BROS2') {
-      return w.lead.includes('BROS2') || w.member_code === 'BROS2';
+      return w.accountable === 'BROS2' || w.lead.includes('BROS2') || w.member_code === 'BROS2';
     }
     return w.member_code === code;
   };
@@ -111,10 +127,17 @@ export default function Register() {
             key={m.code}
             member={m}
             isSelected={selectedMember === m.code}
-            editable={m.code === 'BROS2'}
-            onTemperatureChange={m.code === 'BROS2' ? (value) => {
-              localStorage.setItem('pdca-bros2-temperature', value);
-            } : undefined}
+            editable
+            onTemperatureChange={(value) => {
+              setTemperature(m.code, value);
+              // Mark individual PDCA file dirty if it exists
+              const fileId = `TEAM-OPS-PDCA-${m.code}`;
+              db.files.get(fileId).then((f) => {
+                if (f) {
+                  db.files.update(fileId, { is_dirty: 1, last_edited_at: new Date().toISOString() });
+                }
+              });
+            }}
             onClick={() =>
               setSelectedMember(selectedMember === m.code ? null : m.code)
             }
@@ -147,15 +170,13 @@ export default function Register() {
             isSelected={selectedStatus === 'att'}
             onClick={() => setSelectedStatus('att')}
           />
-          {counts.blk > 0 && (
-            <StatusPill
-              status="blk"
-              label="Bloque"
-              count={counts.blk}
-              isSelected={selectedStatus === 'blk'}
-              onClick={() => setSelectedStatus('blk')}
-            />
-          )}
+          <StatusPill
+            status="blk"
+            label="Bloque"
+            count={counts.blk}
+            isSelected={selectedStatus === 'blk'}
+            onClick={() => setSelectedStatus('blk')}
+          />
           <span className="ml-auto text-xs text-gray-400">
             {filtered.length} workstream{filtered.length !== 1 ? 's' : ''}
           </span>

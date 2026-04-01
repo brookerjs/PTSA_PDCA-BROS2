@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseIndividualPdca, parseRegister } from '../markdownParser';
-import { serializeIndividualPdca } from '../markdownSerializer';
-import { BARA2_MD, CHOY_MD, JUNC_MD, GAGL2_MD, REGISTER_MD } from './fixtures';
+import { parseIndividualPdca, parseRegister, parseReleaseNotes } from '../markdownParser';
+import { serializeIndividualPdca, serializeReleaseNotes } from '../markdownSerializer';
+import { BARA2_MD, CHOY_MD, JUNC_MD, GAGL2_MD, REGISTER_MD, RELEASE_NOTES_MD } from './fixtures';
 
 // === Basic parsing — all files parse without error ===
 
@@ -317,4 +317,112 @@ describe('round-trip: parse → serialize → parse', () => {
       expect(parsed2.global_status).toBe(parsed1.global_status);
     });
   }
+});
+
+// === Bloqué status mapping ===
+
+describe('bloque status mapping', () => {
+  it('"Bloque" maps to "blk" in STATUS_MAP', () => {
+    // Create a minimal PDCA with Bloqué status
+    const md = `# PDCA — TEST1 (Test)
+
+## Suivi Operationnel | Direct Report — Test Role
+
+Derniere mise a jour: 2026-04-01
+R principal: BROS2
+Statut global: Bloque
+
+---
+
+## 1. Test Workstream | Statut: Bloque
+
+| Phase | Contenu |
+|---|---|
+| PLANIFIER | Test plan |
+| DEPLOYER | Test deploy |
+| CONTROLER | Test check |
+| AGIR | Test act |
+
+---
+`;
+    const result = parseIndividualPdca(md);
+    expect(result.global_status).toBe('blk');
+    expect(result.workstreams[0].status).toBe('blk');
+  });
+
+  it('"Bloque" round-trips correctly', () => {
+    const md = `# PDCA — TEST1 (Test)
+
+## Suivi Operationnel | Direct Report — Test Role
+
+Derniere mise a jour: 2026-04-01
+R principal: BROS2
+Statut global: Bloque
+
+---
+
+## 1. Test Workstream | Statut: Bloque
+
+| Phase | Contenu |
+|---|---|
+| PLANIFIER | Test plan |
+| DEPLOYER | Test deploy |
+| CONTROLER | Test check |
+| AGIR | Test act |
+
+---
+`;
+    const parsed1 = parseIndividualPdca(md);
+    const serialized = serializeIndividualPdca(parsed1);
+    const parsed2 = parseIndividualPdca(serialized);
+    expect(parsed2.global_status).toBe('blk');
+    expect(parsed2.workstreams[0].status).toBe('blk');
+  });
+});
+
+// === Release notes parser ===
+
+describe('parseReleaseNotes', () => {
+  it('extracts version from heading', () => {
+    const result = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    expect(result.version).toBe('0.8.0');
+  });
+
+  it('extracts date', () => {
+    const result = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    expect(result.date).toBe('2026-03-29');
+  });
+
+  it('extracts summary', () => {
+    const result = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    expect(result.summary).toContain('Parseur markdown PDCA');
+    expect(result.summary).toContain('Resolution de conflits');
+  });
+
+  it('extracts details', () => {
+    const result = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    expect(result.details).toContain('Iteration 1');
+    expect(result.details).toContain('Iteration 2');
+    expect(result.details).toContain('User Stories');
+  });
+
+  it('derives file ID from s3 key', () => {
+    const result = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    expect(result.id).toBe('BROS2-PDCA-Release-v0.8.0');
+  });
+});
+
+// === Release notes round-trip ===
+
+describe('release notes round-trip: parse → serialize → parse', () => {
+  it('round-trip preserves version, date, summary, and details', () => {
+    const parsed1 = parseReleaseNotes(RELEASE_NOTES_MD, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+    const serialized = serializeReleaseNotes(parsed1);
+    const parsed2 = parseReleaseNotes(serialized, 'BROS2-Team-Ops/BROS2-PDCA-Release-v0.8.0.md');
+
+    expect(parsed2.version).toBe(parsed1.version);
+    expect(parsed2.date).toBe(parsed1.date);
+    expect(parsed2.summary).toBe(parsed1.summary);
+    expect(parsed2.details).toBe(parsed1.details);
+  });
 });

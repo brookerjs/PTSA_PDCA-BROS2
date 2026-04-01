@@ -12,6 +12,7 @@ interface Props {
 }
 
 export default function EditForm({ workstream, actions, onCancel, onSaved }: Props) {
+  const [title, setTitle] = useState(workstream.title);
   const [status, setStatus] = useState<WorkstreamStatus>(workstream.status);
   const [phaseP, setPhaseP] = useState(workstream.phase_p ?? '');
   const [phaseD, setPhaseD] = useState(workstream.phase_d ?? '');
@@ -27,6 +28,7 @@ export default function EditForm({ workstream, actions, onCancel, onSaved }: Pro
     setSaving(true);
     try {
       await updateWorkstream(workstream.id, {
+        title,
         status,
         phase_p: phaseP || null,
         phase_d: phaseD || null,
@@ -64,7 +66,15 @@ export default function EditForm({ workstream, actions, onCancel, onSaved }: Pro
     <div className="border-t border-gray-200 bg-white max-h-[70vh] overflow-y-auto">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 className="text-base font-semibold text-navy">{workstream.title}</h3>
+        <div className="flex items-center gap-2 flex-1 mr-3">
+          <span className="text-xs font-medium text-gray-400">{workstream.member_code}</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-base font-semibold text-navy bg-transparent border-b border-dashed border-gray-300 focus:border-pt-blue focus:outline-none flex-1 py-0.5"
+          />
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}

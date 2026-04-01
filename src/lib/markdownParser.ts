@@ -7,6 +7,7 @@ import {
   type ParsedWorkstream,
   type IndividualPdcaData,
   type RegisterData,
+  type ReleaseNote,
   type TeamMember,
   type RegisterWorkstream,
 } from '../types';
@@ -415,5 +416,53 @@ export function parseRegister(markdown: string): RegisterData {
     last_updated,
     team,
     workstreams,
+  };
+}
+
+// === Release Notes Parser ===
+
+export function parseReleaseNotes(markdown: string, s3Key: string): ReleaseNote {
+  const lines = markdown.split('\n');
+
+  // Extract version from heading: # Notes de version — vX.Y.Z
+  let version = '';
+  const h1Match = markdown.match(/^#\s+Notes de version\s*—\s*v?(\d+\.\d+\.\d+)/m);
+  if (h1Match) {
+    version = h1Match[1];
+  }
+
+  // Extract date
+  let date = '';
+  const dateLine = lines.find((l) => l.toLowerCase().startsWith('date:'));
+  if (dateLine) {
+    date = dateLine.replace(/^date:\s*/i, '').trim();
+  }
+
+  // Split into Resume and Details sections by finding ## headings
+  let summary = '';
+  let details = '';
+
+  const sections = markdown.split(/^## /m).slice(1); // split by ## headings
+  for (const section of sections) {
+    const newlineIdx = section.indexOf('\n');
+    const heading = section.slice(0, newlineIdx).trim().toLowerCase();
+    const body = section.slice(newlineIdx + 1).trim();
+    if (heading === 'resume') {
+      summary = body;
+    } else if (heading === 'details' || heading === 'détails') {
+      details = body;
+    }
+  }
+
+  const fileId = s3Key.split('/').pop()?.replace(/\.md$/, '') ?? `BROS2-PDCA-Release-v${version}`;
+
+  return {
+    id: fileId,
+    s3_key: s3Key,
+    version,
+    date,
+    summary,
+    details,
+    raw_markdown: markdown,
   };
 }

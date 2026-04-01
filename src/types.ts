@@ -83,6 +83,7 @@ export interface Workstream {
   title: string;
   lead: string;
   member_code: string;
+  accountable: string | null;
   status: WorkstreamStatus;
   echeance: string;
   comment: string;
@@ -180,3 +181,22 @@ export interface PushResult {
 }
 
 export type SyncState = 'offline' | 'clean' | 'dirty' | 'syncing';
+
+// === Release notes ===
+
+export interface ReleaseNote {
+  id: string;
+  s3_key: string;
+  version: string;
+  date: string;
+  summary: string;
+  details: string;
+  raw_markdown: string;
+}
+
+// === Temperature storage ===
+
+export interface Temperature {
+  member_code: string;
+  value: string;
+}
