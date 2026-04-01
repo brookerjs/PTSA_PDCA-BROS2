@@ -410,3 +410,60 @@ Destinataires: LEPC (Caroline), BROS2
 ---
 
 *Cree: 2026-03-09 | Mis a jour: 2026-03-09*`;
+
+export const RELEASE_NOTES_MD = `# Notes de version — v0.8.0
+
+Date: 2026-03-29
+Version: 0.8.0
+
+## Resume
+
+- Parseur markdown PDCA avec validation round-trip complete
+- Couche de donnees IndexedDB (Dexie) avec support hors-ligne
+- Service S3 et orchestration de synchronisation
+- Interface utilisateur: registre, detail, edition, parametres
+- Resolution de conflits local/S3
+
+## Details
+
+### Iteration 1 — Parseur Markdown + Fixtures de test
+
+#### Fonctionnalites
+- Types et interfaces TypeScript pour le modele de donnees complet
+- Parseur markdown pour fichiers PDCA individuels
+- Serialiseur markdown pour fidelite round-trip
+- 4 fichiers fixtures (BARA2, CHOY, JUNC, GAGL2)
+
+#### User Stories
+- En tant que BROS2, j'ai besoin que l'app lise correctement mes fichiers PDCA markdown
+- En tant que BROS2, j'ai besoin que les donnees editees soient serialisees en markdown valide
+
+#### Tests
+
+| # | Test | Resultat |
+|---|------|----------|
+| 1 | parses BARA2 without error | PASS |
+| 2 | parses CHOY without error | PASS |
+| 3 | BARA2 has 5 workstreams | PASS |
+| 4 | round-trip produces identical data | PASS |
+
+#### Bugs
+Aucun bug trouve.
+
+---
+
+### Iteration 2 — Couche de donnees Dexie
+
+#### Fonctionnalites
+- Schema Dexie (IndexedDB) avec 3 tables: files, workstreams, actions
+- Service CRUD complet avec support transactionnel
+
+#### User Stories
+- En tant que BROS2, j'ai besoin que mes donnees soient stockees localement pour le mode hors-ligne
+
+#### Tests
+Aucun nouveau test. Regression: 41 tests passing.
+
+#### Bugs
+Aucun bug trouve.
+`;

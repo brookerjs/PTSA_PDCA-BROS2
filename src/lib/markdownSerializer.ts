@@ -3,6 +3,7 @@ import {
   REVERSE_ACTION_LABEL_MAP,
   type IndividualPdcaData,
   type ParsedWorkstream,
+  type ReleaseNote,
 } from '../types';
 
 export function serializeIndividualPdca(data: IndividualPdcaData): string {
@@ -85,6 +86,26 @@ function serializeWorkstream(ws: ParsedWorkstream): string {
 
   lines.push('');
   lines.push('---');
+
+  return lines.join('\n');
+}
+
+export function serializeReleaseNotes(note: ReleaseNote): string {
+  const lines: string[] = [];
+
+  lines.push(`# Notes de version — v${note.version}`);
+  lines.push('');
+  lines.push(`Date: ${note.date}`);
+  lines.push(`Version: ${note.version}`);
+  lines.push('');
+  lines.push('## Resume');
+  lines.push('');
+  lines.push(note.summary);
+  lines.push('');
+  lines.push('## Details');
+  lines.push('');
+  lines.push(note.details);
+  lines.push('');
 
   return lines.join('\n');
 }

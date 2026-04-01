@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { PdcaFile, Workstream, Action, ParsedWorkstream } from '../types';
+import type { PdcaFile, Workstream, Action, ParsedWorkstream, ReleaseNote } from '../types';
 
 export async function upsertFile(file: PdcaFile): Promise<void> {
   await db.files.put(file);
@@ -31,6 +31,7 @@ export async function upsertWorkstreamsForFile(
         title: ws.title,
         lead: '',
         member_code: memberCode,
+        accountable: 'BROS2',
         status: ws.status,
         echeance: '',
         comment: '',
@@ -129,4 +130,25 @@ export async function getFile(fileId: string): Promise<PdcaFile | undefined> {
 
 export async function getAllFiles(): Promise<PdcaFile[]> {
   return db.files.toArray();
+}
+
+// === Temperature operations ===
+
+export async function getTemperature(memberCode: string): Promise<string> {
+  const temp = await db.temperatures.get(memberCode);
+  return temp?.value ?? '';
+}
+
+export async function setTemperature(memberCode: string, value: string): Promise<void> {
+  await db.temperatures.put({ member_code: memberCode, value });
+}
+
+// === Release notes operations ===
+
+export async function upsertReleaseNote(note: ReleaseNote): Promise<void> {
+  await db.release_notes.put(note);
+}
+
+export async function getAllReleaseNotes(): Promise<ReleaseNote[]> {
+  return db.release_notes.toArray();
 }

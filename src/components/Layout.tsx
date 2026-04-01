@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { LayoutGrid, Settings } from 'lucide-react';
+import { LayoutGrid, FileText, Settings } from 'lucide-react';
 import SyncBar from './SyncBar';
 import type { Page } from '../App';
 
@@ -17,7 +17,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         <div className="flex items-center gap-3">
           <img src="/pt-monogram.png" alt="Premier Tech" className="w-8 h-8 rounded" />
           <div>
-            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.8.0</span></h1>
+            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.9.0</span></h1>
             <p className="text-xs text-white/60">Premier Tech Systems & Automation</p>
           </div>
         </div>
@@ -37,6 +37,17 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
           >
             <LayoutGrid size={18} />
             Registre PDCA
+          </button>
+          <button
+            onClick={() => onNavigate('build-notes')}
+            className={`flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${
+              currentPage === 'build-notes'
+                ? 'bg-light-blue text-navy font-medium'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <FileText size={18} />
+            Notes de version
           </button>
           <button
             onClick={() => onNavigate('settings')}

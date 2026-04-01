@@ -1,7 +1,7 @@
 import { db } from './db';
 import * as s3 from './s3Service';
 import * as dbService from './dbService';
-import { parseIndividualPdca, parseRegister } from './markdownParser';
+import { parseIndividualPdca, parseRegister, parseReleaseNotes } from './markdownParser';
 import { serializeIndividualPdca } from './markdownSerializer';
 import type { S3Config, SyncResult, PushResult, PdcaFile } from '../types';
 
@@ -13,6 +13,11 @@ function fileIdFromKey(key: string): string {
 
 function isRegisterFile(fileId: string): boolean {
   return fileId.toLowerCase().includes('register');
+}
+
+function isReleaseNotesFile(key: string): boolean {
+  const filename = key.split('/').pop() ?? key;
+  return /^BROS2-PDCA-Release/i.test(filename);
 }
 
 // === Pull: S3 → local ===
@@ -55,12 +60,19 @@ export async function pullFromS3(config: S3Config): Promise<SyncResult> {
       await dbService.upsertFile(file);
 
       // Parse and store structured data
-      if (isRegisterFile(fileId)) {
+      if (isReleaseNotesFile(remote.key)) {
+        const releaseNote = parseReleaseNotes(markdown, remote.key);
+        await dbService.upsertReleaseNote(releaseNote);
+      } else if (isRegisterFile(fileId)) {
         // Register data is accessed via re-parsing raw_markdown when needed
         parseRegister(markdown); // validate it parses cleanly
       } else {
         const parsed = parseIndividualPdca(markdown);
         await dbService.upsertWorkstreamsForFile(fileId, parsed.member_code, parsed.workstreams);
+        // Populate temperature from parsed data
+        if (parsed.temperature) {
+          await dbService.setTemperature(parsed.member_code, parsed.temperature);
+        }
       }
 
       result.pulled++;
