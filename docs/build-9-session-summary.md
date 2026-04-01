@@ -5,7 +5,7 @@
 **Owner:** Scott Brooker (BROS2), Dir. Programmes, PTSA
 **Date:** 2026-04-01
 **Branch:** `claude/build-9-summary-notes-airDj`
-**Continues from:** Iterations 1–6 documented in `build-history-coaching-note.md`
+**Continues from:** Iterations 1–6 and Builds 7–8 documented in `build-history-coaching-note.md`
 
 ---
 
@@ -64,8 +64,8 @@
 ### Features
 - **BROS2 as equipier with lead-based filtering** — BROS2 (Scott, Dir. Programmes) appears as the first card in the team sidebar. Clicking BROS2 filters workstreams where the `lead` field contains "BROS2" (cross-cutting view of all workstreams Scott is involved in). Other equipiers still filter by `member_code` as before.
 - **Editable temperature for BROS2** — BROS2's temperature is editable inline via a pencil icon on the card. Persisted in localStorage. Other equipiers' temperatures come from their PDCA files and are read-only.
-- **Build number in UI** — Version displayed in the header (right of "BROS2 PDCA") in `v0.8.0` semver format.
-- **Semantic versioning adopted** — Moved from ad-hoc "Build N" numbering to semver (`package.json` version `0.8.0`).
+- **Build number in UI** — Initially displayed as "Build 8" at the bottom of the side navigation (`0.0.8`). Later moved to the header (right of "BROS2 PDCA") and reformatted to `v0.8.1` semver.
+- **Semantic versioning adopted** — Moved from ad-hoc "Build N" numbering to semver. Retroactively tagged all builds v0.1.0–v0.8.0, then patched to v0.8.1.
 
 ### User Stories
 - *As BROS2 (director), I need to see all workstreams where I'm listed as lead, across all equipiers, so I can track my cross-cutting responsibilities.*
@@ -83,13 +83,23 @@
 
 ---
 
-## Build 9 — Session Summary & Coaching Note Update
+## Build 9 — Two Phases
+
+Build 9 consists of two distinct phases:
+
+### Phase 1: Documentation Catch-up (this branch)
 **Branch:** `claude/build-9-summary-notes-airDj`
 **Date:** 2026-04-01
-**Theme:** Documentation catch-up — capturing the build history for Builds 7 and 8 that occurred after the original coaching note was written.
+**Theme:** Capturing the build history for Builds 7 and 8 that occurred after the original coaching note was written.
 
-### What This Build Covers
-Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but were not documented in the coaching note. This build adds complete traceability for those iterations, including features, user stories, bugs found, and coaching lessons.
+Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but were not documented in the coaching note. This phase adds complete traceability for those iterations, including features, user stories, bugs found, and coaching lessons.
+
+### Phase 2: Feature Build (branch `claude/build-9-WJ75c`)
+**Planned in:** [Build 9 Planning Session (2026-03-31)](../2026-03-31-Session-Summary-Build-9-Planning.md)
+**GitHub Issues:** #3 (title disambiguation), #4 (A-accountable), #6 (Build Notes shell), #7 (release notes parser), #8 (summary view), #9 (coaching detail), #10 (Bloqué status), #11 (editable temperature S3 sync)
+**Milestone:** v0.9.0 — Build 9
+
+The feature work was planned in a co-work session on claude.ai and executed on a separate branch. See the planning session summary for full requirements decomposition and dependency chain.
 
 ### Tests
 
@@ -104,7 +114,7 @@ Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but 
 
 ## Test Results Across All Builds
 
-### Automated Tests: 41 total, 41 passing (unchanged since Iteration 1)
+### Automated Tests: 49 total, 49 passing (41 from Iteration 1 + 8 from Build 9 Phase 2)
 
 | Suite | Tests | Status |
 |---|---|---|

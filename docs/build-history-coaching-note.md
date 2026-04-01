@@ -7,11 +7,13 @@
 **Branch:** `claude/markdown-parser-ui-yU8Al`
 **Stack:** Vite 8 + React 19 + TypeScript 5.9 + Dexie (IndexedDB) + TailwindCSS 4 + AWS SDK v3
 **Test Framework:** Vitest 4.1.2
-**Total Automated Tests:** 41 (all passing)
+**Total Automated Tests:** 49 (all passing)
 
 ---
 
 ## How to Read This Document
+
+> **Note on terminology:** Iterations 1–6 were built in a single continuous session and use the term "Iteration." Starting with Build 7, each delivery became a distinct session with its own branch and tag, so we switched to "Build." The terms are interchangeable — both represent a single incremental delivery of working software.
 
 This document traces the full build of a real product, iteration by iteration. For each iteration you will find:
 
@@ -426,8 +428,8 @@ No new automated tests. TypeScript strict check + regression.
 ### Features
 - **BROS2 as equipier with lead-based filtering** — BROS2 (Scott, Dir. Programmes) appears as the first card in the team sidebar. Clicking BROS2 filters workstreams where the `lead` field contains "BROS2" (cross-cutting view of all workstreams Scott is involved in). Other equipiers still filter by `member_code` as before.
 - **Editable temperature for BROS2** — BROS2's temperature is editable inline via a pencil icon on the card. Persisted in localStorage. Other equipiers' temperatures come from their PDCA files and are read-only.
-- **Build number in UI** — Version displayed in the header (right of "BROS2 PDCA") in `v0.8.0` semver format.
-- **Semantic versioning adopted** — Moved from ad-hoc "Build N" numbering to semver (`package.json` version `0.8.0`).
+- **Build number in UI** — Initially displayed as "Build 8" at the bottom of the side navigation (`package.json` version `0.0.8`). Later moved to the header (right of "BROS2 PDCA") and reformatted to `v0.8.1` semver.
+- **Semantic versioning adopted** — Moved from ad-hoc "Build N" numbering to semver. Retroactively tagged all builds v0.1.0–v0.8.0, then patched to v0.8.1 for the header move.
 
 ### User Stories
 - *As BROS2 (director), I need to see all workstreams where I'm listed as lead, across all equipiers, so I can track my cross-cutting responsibilities.*
@@ -442,6 +444,28 @@ No new automated tests. TypeScript strict check + regression.
 | All 41 parser tests | PASS |
 
 ### Bugs Found and Fixed: None
+
+---
+
+## Appendix — BROS2 PDCA Data File Creation (2026-03-31)
+
+After deploying Build 8, the BROS2 equipier card showed 0 workstreams. Investigation revealed that while the app code was correct, no `TEAM-OPS-PDCA-BROS2.md` data file existed in S3. The other team members (BARA2, CHOY, JUNC, GAGL2) each had individual PDCA files; BROS2 did not.
+
+### What was done
+
+1. Created `TEAM-OPS-PDCA-BROS2.md` in the vault at `Projects/Professional/BROS2 Team Operations Claude Project/`, using the same markdown format as the existing individual PDCA files.
+2. Copied the 2 BROS2 R-responsible workstreams from the consolidated register (`TEAM-OPS-Active-PDCA-Register.md`): OPX X-Matrix (#12) and PTSA Portfolio (#16).
+3. Ran pensync to push the new file to S3, then synced in the app. Both workstreams appeared correctly.
+
+### Design decision: R-responsible vs A-accountable
+
+During this session, we considered also adding workstreams where BROS2 is Lead/Accountable but not R opérationnel (e.g., Renouvellement Salesforce, SAS Web panne). After testing, we decided to keep the current model: **R opérationnel owns the workstream on their card.** BROS2 has visibility across all cards as the manager. This is cleaner and avoids duplicating workstreams across multiple team members.
+
+A future feature may capture the A-accountable relationship explicitly in the app, but for now the register's consolidated table provides that accountability view.
+
+### Coaching observation
+
+**Data and code are co-dependencies.** A working app with no data file produces the same result as a broken app — nothing on screen. Testing a feature end-to-end means verifying both the code path and the data path. In this case, the code was correct (Build 8 filtering logic worked) but the data was missing (no BROS2 PDCA file in S3). This is a common pattern in data-driven apps: always verify that the data exists, is in the expected format, and is reachable through the full pipeline (local file → pensync → S3 → app proxy → parser → IndexedDB → UI).
 
 ---
 
@@ -466,7 +490,7 @@ Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but 
 
 ## Updated Summary — Test Results Across All Builds
 
-### Automated Tests: 41 total, 41 passing (unchanged since Iteration 1)
+### Automated Tests: 49 total, 49 passing (41 from Iteration 1 + 8 from Build 9)
 
 | Suite | Tests | Status |
 |---|---|---|
