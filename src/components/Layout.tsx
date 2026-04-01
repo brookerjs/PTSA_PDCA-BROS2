@@ -17,7 +17,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         <div className="flex items-center gap-3">
           <img src="/pt-monogram.png" alt="Premier Tech" className="w-8 h-8 rounded" />
           <div>
-            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA</h1>
+            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.8.0</span></h1>
             <p className="text-xs text-white/60">Premier Tech Systems & Automation</p>
           </div>
         </div>
@@ -49,9 +49,6 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
             <Settings size={18} />
             Parametres
           </button>
-          <div className="mt-auto px-4 py-3">
-            <p className="text-[10px] text-gray-300">Build 8</p>
-          </div>
         </nav>
 
         {/* Main content */}
