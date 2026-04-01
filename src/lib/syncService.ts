@@ -133,8 +133,19 @@ export async function pushToS3(config: S3Config): Promise<PushResult> {
           actions: ws.actions,
         }));
 
+        // Inject updated temperature into role_context before serializing
+        let updatedRoleContext = original.role_context;
+        const currentTemp = await dbService.getTemperature(original.member_code);
+        if (currentTemp && updatedRoleContext) {
+          const tempPattern = /([Tt]emperature\s+cette\s+semaine\s*:\s*).+/;
+          if (tempPattern.test(updatedRoleContext)) {
+            updatedRoleContext = updatedRoleContext.replace(tempPattern, `$1${currentTemp}`);
+          }
+        }
+
         const data = {
           ...original,
+          role_context: updatedRoleContext,
           workstreams: updatedWorkstreams,
         };
 
@@ -186,7 +197,17 @@ export async function resolveConflictKeepLocal(
     actions: ws.actions,
   }));
 
-  const markdown = serializeIndividualPdca({ ...original, workstreams: updatedWorkstreams });
+  // Inject updated temperature into role_context
+  let updatedRoleContext = original.role_context;
+  const currentTemp = await dbService.getTemperature(original.member_code);
+  if (currentTemp && updatedRoleContext) {
+    const tempPattern = /([Tt]emperature\s+cette\s+semaine\s*:\s*).+/;
+    if (tempPattern.test(updatedRoleContext)) {
+      updatedRoleContext = updatedRoleContext.replace(tempPattern, `$1${currentTemp}`);
+    }
+  }
+
+  const markdown = serializeIndividualPdca({ ...original, role_context: updatedRoleContext, workstreams: updatedWorkstreams });
   await s3.putFileContent(config, file.s3_key, markdown);
   await dbService.markFileClean(fileId);
 }

@@ -186,7 +186,15 @@ function MarkdownTable({ lines }: { lines: string[] }) {
   );
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function inlineMarkdown(text: string): string {
-  // Bold: **text** → <strong>text</strong>
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Escape HTML entities first, then apply bold formatting
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
