@@ -568,6 +568,10 @@ The Build 9 feature branch (`claude/build-9-WJ75c`) was generated in a co-work s
 
 14. **AI-generated code requires the same review rigor as human code.** The Build 9 feature branch was generated in a co-work session on an iPad. The code quality was generally high — it followed existing patterns, added meaningful tests, and compiled cleanly. But it still contained an XSS vulnerability and an incomplete sync implementation. The lesson for PMs: AI-assisted development compresses *writing* time, not *review* time. Budget for code review regardless of who (or what) wrote the code.
 
+15. **Switching AI coding partners mid-build is like switching suppliers mid-mandate.** The Build 9 code was generated in claude.ai (iPad co-work), then reviewed and fixed in Claude Code (MacBook). Each AI context has different strengths, but the handoff between them is where quality drops. The receiving context doesn't share the generating context's assumptions or blind spots. For PMs: when work crosses context boundaries — between AI tools, teams, or suppliers — that boundary is your highest-risk zone. Budget review time at every handoff.
+
+16. **Automated tests validate expected behavior. Code review validates unexpected behavior.** 49 tests passed. TypeScript compiled clean. Two significant bugs remained. Tests prove the code does what you intended. Reviews ask whether your intentions were complete. Both are necessary — neither is sufficient alone.
+
 ---
 
 *Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs added*
