@@ -441,6 +441,7 @@ export function parseReleaseNotes(markdown: string, s3Key: string): ReleaseNote 
   // Split into Resume and Details sections by finding ## headings
   let summary = '';
   let details = '';
+  let coaching = '';
 
   const sections = markdown.split(/^## /m).slice(1); // split by ## headings
   for (const section of sections) {
@@ -451,6 +452,8 @@ export function parseReleaseNotes(markdown: string, s3Key: string): ReleaseNote 
       summary = body;
     } else if (heading === 'details' || heading === 'détails') {
       details = body;
+    } else if (heading === 'coaching') {
+      coaching = body;
     }
   }
 
@@ -463,6 +466,7 @@ export function parseReleaseNotes(markdown: string, s3Key: string): ReleaseNote 
     date,
     summary,
     details,
+    coaching,
     raw_markdown: markdown,
   };
 }

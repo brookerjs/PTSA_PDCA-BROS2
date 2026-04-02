@@ -588,6 +588,43 @@ The Build 9 feature branch (`claude/build-9-WJ75c`) was generated in a co-work s
 
 ---
 
-*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs + Issue #9 correction*
+## Build 10 — Coaching Detail View (Issue #9)
+**Branch:** `claude/build-10`
+**Date:** 2026-04-02
+**Theme:** Delivering the coaching content that Issue #9 originally specified, using the existing release notes infrastructure.
+
+### Design Decision: Extend vs. Rebuild
+
+Issue #9 required coaching-format detail (user stories, test tables, bugs) inside each build card's toggle. Two approaches were evaluated:
+
+**Option 2a — Content only (zero code changes):** Embed coaching content inside the existing `## Details` section of each release note file. The toggle and renderer already work. Pure content task.
+
+**Option 2b — Parser extension (small code change):** Add a `## Coaching` section to release notes and extend the parser to capture it separately. Cleaner content separation, renders as a distinct block below Details.
+
+**Decision: Option 2b.** The parser change was assessed as low risk:
+- The `parseReleaseNotes()` function is 45 lines, isolated from the PDCA and register parsers
+- The change adds one `else if` branch — existing branches untouched
+- The `coaching` field is additive to the `ReleaseNote` interface — no existing consumers break
+- 49 tests + TypeScript strict mode provide immediate regression detection
+- Release notes without a `## Coaching` section simply show an empty string — graceful degradation
+
+**Code changes:** 3 files, ~16 lines total:
+- `types.ts` — 1 line: added `coaching: string` to `ReleaseNote`
+- `markdownParser.ts` — 3 lines: added `let coaching = ''`, `else if (heading === 'coaching')` branch, `coaching` in return object
+- `BuildNotes.tsx` — ~12 lines: widened toggle condition from `note.details` to `(note.details || note.coaching)`, wrapped details in conditional block, added coaching render with border separator and "Coaching" sub-heading
+
+**Result:** TypeScript strict PASS. All 49 tests PASS. Zero regressions.
+
+**Correction:** The initial risk assessment stated "3-line parser change" and "~10 lines total." The parser change was indeed 3 lines, but the UI component restructuring in BuildNotes.tsx accounted for ~12 lines — the toggle's inner layout was reorganized to handle two optional content blocks instead of one. BROS2 challenged the scope undercount after reviewing the changes, and the estimate was corrected from ~10 to ~16 lines. The risk level remains low (rendering logic only, no data flow or sync changes), but the scope was understated. **For PMs and devs: "small change" estimates must account for all files touched, not just the riskiest one. A 3-line parser change that requires a 12-line UI restructure is a 16-line change. Quoting the smallest piece as the whole creates false confidence in scope. Always count the full footprint before committing.**
+
+### Coaching Observation
+
+18. **Extend existing patterns before building new ones.** Issue #9 appeared to require a new parser, a new data pipeline, and a new UI component to ingest the monolithic coaching note. Stepping back revealed that the existing release notes infrastructure — parser, Dexie storage, detail toggle, markdown renderer — already handled 90% of the requirement. The missing piece was a 3-line parser extension and the right content in the right files. The temptation to build something new is strong, especially when the requirement sounds new. But the first question should always be: "Can I extend what already works?" Extending is cheaper, safer, and preserves architectural consistency. Building new is justified only when the existing pattern genuinely cannot accommodate the need.
+
+**For PMs:** When a feature request arrives, map it against existing capabilities before scoping new work. The gap between "what we have" and "what we need" is often smaller than it appears — especially when the existing architecture was designed with clean separation of concerns.
+
+---
+
+*Document updated: 2026-04-02 | BROS2 Team Operations | Build 10 coaching detail view + observation #18*
 *Original document: 2026-03-29 | Session: claude/markdown-parser-ui-yU8Al*
-*Update session: claude/build-9-summary-notes-airDj*
+*Update session: claude/build-10*

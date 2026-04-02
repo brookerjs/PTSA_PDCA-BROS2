@@ -48,7 +48,7 @@ function ReleaseCard({ note }: { note: ReleaseNote }) {
       </div>
 
       {/* Coaching detail toggle */}
-      {note.details && (
+      {(note.details || note.coaching) && (
         <>
           <button
             onClick={() => setExpanded(!expanded)}
@@ -59,9 +59,17 @@ function ReleaseCard({ note }: { note: ReleaseNote }) {
           </button>
           {expanded && (
             <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50">
-              <div className="pt-4 text-sm text-gray-700 leading-relaxed prose-sm">
-                <MarkdownBlock content={note.details} />
-              </div>
+              {note.details && (
+                <div className="pt-4 text-sm text-gray-700 leading-relaxed prose-sm">
+                  <MarkdownBlock content={note.details} />
+                </div>
+              )}
+              {note.coaching && (
+                <div className="pt-4 mt-4 border-t border-gray-200 text-sm text-gray-700 leading-relaxed prose-sm">
+                  <h4 className="text-sm font-semibold text-navy mb-2">Coaching</h4>
+                  <MarkdownBlock content={note.coaching} />
+                </div>
+              )}
             </div>
           )}
         </>
