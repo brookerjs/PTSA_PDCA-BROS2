@@ -623,8 +623,24 @@ Issue #9 required coaching-format detail (user stories, test tables, bugs) insid
 
 **For PMs:** When a feature request arrives, map it against existing capabilities before scoping new work. The gap between "what we have" and "what we need" is often smaller than it appears — especially when the existing architecture was designed with clean separation of concerns.
 
+### Follow-up: Separate Coaching Toggle
+
+After the initial commit, BROS2 identified that the coaching section should have its own independent toggle rather than rendering inline below details. This was a UX refinement: details and coaching serve different audiences and should be independently expandable.
+
+**Estimate:** "~12 lines added to 1 file."
+
+**Actual:** 31 insertions, 18 deletions, 49 lines touched in BuildNotes.tsx. Net addition was 13 lines (close to estimate), but the total churn was 49 lines because the existing single-toggle structure had to be decomposed into two independent toggle blocks. The prior implementation's combined toggle (one `useState`, one button, one expand area with two conditional blocks inside) was replaced with two separate toggles (two `useState` hooks, two buttons, two expand areas). This is a restructure, not just an addition.
+
+**Why the estimate was off:** "~12 lines added" counted only the new coaching toggle block. It did not account for the lines removed and rewritten when splitting the existing combined toggle into two independent ones. Estimating additions without accounting for the restructuring of existing code understates the true scope.
+
+**Result:** TypeScript strict PASS. All 49 tests PASS. Zero regressions. Risk assessment was accurate (low), but scope estimate was not.
+
+### Coaching Observation
+
+19. **Estimate total churn, not just net additions.** Twice in this build, the AI partner understated scope by counting only new lines. The first time (observation in the correction above), "~10 lines" became ~16. The second time, "~12 lines" became 49 lines touched. In both cases the risk was correctly assessed as low, but the scope was wrong. The pattern: when you modify existing code to accommodate a new feature, the restructuring of existing code counts toward scope even though it's not "new" code. **For PMs: when a dev says "small change, ~12 lines," ask "12 lines net or 12 lines touched?" The difference matters for code review, testing, and estimating calendar time. Net additions measure what's new. Lines touched measure what can break.**
+
 ---
 
-*Document updated: 2026-04-02 | BROS2 Team Operations | Build 10 coaching detail view + observation #18*
+*Document updated: 2026-04-02 | BROS2 Team Operations | Build 10 coaching detail view + observations #18-19*
 *Original document: 2026-03-29 | Session: claude/markdown-parser-ui-yU8Al*
 *Update session: claude/build-10*

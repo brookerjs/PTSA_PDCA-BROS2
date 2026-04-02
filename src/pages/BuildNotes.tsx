@@ -31,7 +31,8 @@ export default function BuildNotes() {
 }
 
 function ReleaseCard({ note }: { note: ReleaseNote }) {
-  const [expanded, setExpanded] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [coachingExpanded, setCoachingExpanded] = useState(false);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -47,29 +48,41 @@ function ReleaseCard({ note }: { note: ReleaseNote }) {
         </div>
       </div>
 
-      {/* Coaching detail toggle */}
-      {(note.details || note.coaching) && (
+      {/* Details toggle */}
+      {note.details && (
         <>
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => setDetailsExpanded(!detailsExpanded)}
             className="w-full px-5 py-2.5 border-t border-gray-100 flex items-center gap-2 text-xs font-medium text-pt-blue hover:bg-gray-50 transition-colors"
           >
-            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            {expanded ? 'Masquer les details' : 'Voir les details'}
+            {detailsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {detailsExpanded ? 'Masquer les details' : 'Voir les details'}
           </button>
-          {expanded && (
+          {detailsExpanded && (
             <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50">
-              {note.details && (
-                <div className="pt-4 text-sm text-gray-700 leading-relaxed prose-sm">
-                  <MarkdownBlock content={note.details} />
-                </div>
-              )}
-              {note.coaching && (
-                <div className="pt-4 mt-4 border-t border-gray-200 text-sm text-gray-700 leading-relaxed prose-sm">
-                  <h4 className="text-sm font-semibold text-navy mb-2">Coaching</h4>
-                  <MarkdownBlock content={note.coaching} />
-                </div>
-              )}
+              <div className="pt-4 text-sm text-gray-700 leading-relaxed prose-sm">
+                <MarkdownBlock content={note.details} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Coaching toggle */}
+      {note.coaching && (
+        <>
+          <button
+            onClick={() => setCoachingExpanded(!coachingExpanded)}
+            className="w-full px-5 py-2.5 border-t border-gray-100 flex items-center gap-2 text-xs font-medium text-pt-blue hover:bg-gray-50 transition-colors"
+          >
+            {coachingExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {coachingExpanded ? 'Masquer le coaching' : 'Voir le coaching'}
+          </button>
+          {coachingExpanded && (
+            <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50">
+              <div className="pt-4 text-sm text-gray-700 leading-relaxed prose-sm">
+                <MarkdownBlock content={note.coaching} />
+              </div>
             </div>
           )}
         </>
