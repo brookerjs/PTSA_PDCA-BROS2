@@ -572,8 +572,22 @@ The Build 9 feature branch (`claude/build-9-WJ75c`) was generated in a co-work s
 
 16. **Automated tests validate expected behavior. Code review validates unexpected behavior.** 49 tests passed. TypeScript compiled clean. Two significant bugs remained. Tests prove the code does what you intended. Reviews ask whether your intentions were complete. Both are necessary — neither is sufficient alone.
 
+17. **Never close an issue without verifying the acceptance criteria against the actual build.** Issue #9 specified a coaching-format narrative view (iterations, user stories, test tables, bugs from the build history coaching note). What was delivered was a release notes detail toggle — a useful feature, but not what the issue specified. The issue was closed as "Delivered in v0.9.0" without verification, and the error propagated into the coaching note, session summary, and release notes before being caught during user acceptance testing. The fix required reopening #9, creating a new issue (#12) to document what was actually delivered, and correcting every downstream document. **For PMs: the human must verify the deliverable against the acceptance criteria before the build is accepted. This is the one step that cannot be delegated to AI. Compiling, testing, and even code review are necessary but not sufficient — only the product owner can confirm "this is what I ordered."**
+
 ---
 
-*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs added*
+### Correction Log (Build 9)
+
+| Item | Error | Correction |
+|---|---|---|
+| Issue #9 | Closed as "Delivered in v0.9.0" | Reopened, moved to Build 10 |
+| Issue #12 | Did not exist | Created to document the actual delivered feature (release notes detail toggle) |
+| Coaching note | Listed "Coaching detail view with toggle" as delivered | Corrected to "Release notes detail toggle (#12)" |
+| Session summary | Listed #9 as delivered | Corrected: #9 not delivered, #12 added |
+| Release note v0.9.0 | Listed "Coaching detail view with toggle" | Corrected to "Release notes detail toggle on build cards (#12)" |
+
+---
+
+*Document updated: 2026-04-01 | BROS2 Team Operations | Builds 7–9 + code review bugs + Issue #9 correction*
 *Original document: 2026-03-29 | Session: claude/markdown-parser-ui-yU8Al*
 *Update session: claude/build-9-summary-notes-airDj*

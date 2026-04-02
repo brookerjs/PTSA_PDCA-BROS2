@@ -96,10 +96,13 @@ Builds 7 and 8 were shipped across two sessions (2026-03-29 and 2026-03-31) but 
 
 ### Phase 2: Feature Build (branch `claude/build-9-WJ75c`)
 **Planned in:** [Build 9 Planning Session (2026-03-31)](../2026-03-31-Session-Summary-Build-9-Planning.md)
-**GitHub Issues:** #3 (title disambiguation), #4 (A-accountable), #6 (Build Notes shell), #7 (release notes parser), #8 (summary view), #9 (coaching detail), #10 (Bloqué status), #11 (editable temperature S3 sync)
+**GitHub Issues delivered:** #3 (title disambiguation), #4 (A-accountable), #6 (Build Notes shell), #7 (release notes parser), #8 (summary view), #10 (Bloqué status), #11 (editable temperature S3 sync), #12 (release notes detail toggle)
+**Not delivered:** #9 (coaching detail view with toggle) — moved to Build 10. What was implemented was a release notes detail toggle (#12), not the coaching narrative view specified in #9. See correction note below.
 **Milestone:** v0.9.0 — Build 9
 
 The feature work was planned in a co-work session on claude.ai and executed on a separate branch. See the planning session summary for full requirements decomposition and dependency chain.
+
+**Correction (2026-04-01):** During code review, the implementation for #9 was accepted without verifying acceptance criteria against the actual build. The delivered feature (release notes detail toggle) was useful but did not match #9's specification (coaching-format narrative with iterations, user stories, test tables, and bugs). Issue #9 was reopened and moved to Build 10. The delivered feature was retroactively documented as Issue #12.
 
 ### Tests
 
