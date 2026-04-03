@@ -191,6 +191,7 @@ export interface ReleaseNote {
   date: string;
   summary: string;
   details: string;
+  coaching: string;
   raw_markdown: string;
 }
 

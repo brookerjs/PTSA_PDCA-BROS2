@@ -29,8 +29,12 @@ export default function TeamMemberCard({ member, isSelected, editable, onTempera
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-navy">{member.code}</span>
-        <span className="text-xs text-gray-400">{member.name}</span>
+        <span className="text-sm font-medium text-navy truncate">
+          {member.code.includes('_') ? member.name : member.code}
+        </span>
+        {!member.code.includes('_') && (
+          <span className="text-xs text-gray-400 shrink-0 ml-1">{member.name}</span>
+        )}
       </div>
       <p className="text-xs text-gray-500 mt-0.5 leading-tight">{member.role}</p>
       <div className="mt-1 flex items-center gap-1">

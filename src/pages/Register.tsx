@@ -29,9 +29,15 @@ export default function Register() {
     }
   }, []);
 
-  // Parse team members from the register file, plus BROS2 as owner
+  // Parse team members from the register file, plus Vue Ensemble + BROS2
   const team: TeamMember[] = useMemo(() => {
     const tempMap = new Map(temperatures.map((t) => [t.member_code, t.value]));
+    const vueEnsemble: TeamMember = {
+      code: 'VUE_ENSEMBLE',
+      name: 'Équipe BROS2',
+      role: 'Vue Ensemble',
+      temperature: '',
+    };
     const bros2: TeamMember = {
       code: 'BROS2',
       name: 'Scott',
@@ -39,15 +45,15 @@ export default function Register() {
       temperature: tempMap.get('BROS2') ?? '',
     };
     const registerFile = files.find((f) => f.id.toLowerCase().includes('register'));
-    if (!registerFile) return [bros2];
+    if (!registerFile) return [vueEnsemble, bros2];
     try {
       const parsed = parseRegister(registerFile.raw_markdown).team.map((m) => ({
         ...m,
         temperature: tempMap.get(m.code) ?? m.temperature,
       }));
-      return [bros2, ...parsed];
+      return [vueEnsemble, bros2, ...parsed.sort((a, b) => a.code.localeCompare(b.code))];
     } catch {
-      return [bros2];
+      return [vueEnsemble, bros2];
     }
   }, [files, temperatures]);
 
@@ -57,11 +63,9 @@ export default function Register() {
     [files]
   );
 
-  // Filter workstreams — BROS2 filters by accountable/lead, others by member_code
+  // Filter workstreams — Vue Ensemble shows all, others by member_code
   const matchesMember = (w: typeof allWorkstreams[number], code: string) => {
-    if (code === 'BROS2') {
-      return w.accountable === 'BROS2' || w.lead.includes('BROS2') || w.member_code === 'BROS2';
-    }
+    if (code === 'VUE_ENSEMBLE') return true;
     return w.member_code === code;
   };
 
@@ -127,8 +131,9 @@ export default function Register() {
             key={m.code}
             member={m}
             isSelected={selectedMember === m.code}
-            editable
+            editable={m.code !== 'VUE_ENSEMBLE'}
             onTemperatureChange={(value) => {
+              if (m.code === 'VUE_ENSEMBLE') return;
               setTemperature(m.code, value);
               // Mark individual PDCA file dirty if it exists
               const fileId = `TEAM-OPS-PDCA-${m.code}`;
