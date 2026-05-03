@@ -201,3 +201,25 @@ export interface Temperature {
   member_code: string;
   value: string;
 }
+
+// === Help articles ===
+
+export interface HelpArticle {
+  id?: number;
+  title: string;
+  content: string;
+  category: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// === Admin form types ===
+
+export interface NewWorkstreamData {
+  title: string;
+  status: WorkstreamStatus;
+  phase_p: string;
+  phase_d: string;
+  phase_c: string;
+  phase_a: string;
+}

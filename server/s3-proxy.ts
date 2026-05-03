@@ -129,6 +129,23 @@ export default function s3ProxyPlugin(): Plugin {
               return sendJson(res, 200, { ok: true });
             }
 
+            case 'put-binary': {
+              const key = body.key as string;
+              const data = body.data as string;
+              const contentType = (body.contentType as string) || 'application/octet-stream';
+              const buffer = Buffer.from(data, 'base64');
+              const client = createClient(config);
+              await client.send(
+                new PutObjectCommand({
+                  Bucket: config.bucket,
+                  Key: key,
+                  Body: buffer,
+                  ContentType: contentType,
+                }),
+              );
+              return sendJson(res, 200, { ok: true });
+            }
+
             default:
               return sendJson(res, 404, { error: `Unknown route: ${route}` });
           }

@@ -79,3 +79,17 @@ export async function putFileContent(
     content,
   });
 }
+
+export async function putBinaryContent(
+  config: S3Config,
+  key: string,
+  data: string,
+  contentType: string,
+): Promise<void> {
+  await proxyPost<{ ok: boolean }>('put-binary', {
+    ...config,
+    key,
+    data,
+    contentType,
+  });
+}

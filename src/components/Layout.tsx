@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { LayoutGrid, FileText, Settings } from 'lucide-react';
+import { LayoutGrid, FileText, Settings, Shield, HelpCircle } from 'lucide-react';
 import SyncBar from './SyncBar';
 import type { Page } from '../App';
 
@@ -17,7 +17,7 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
         <div className="flex items-center gap-3">
           <img src="/pt-monogram.png" alt="Premier Tech" className="w-8 h-8 rounded" />
           <div>
-            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v0.10.0</span></h1>
+            <h1 className="text-base font-semibold leading-tight">BROS2 PDCA <span className="text-[10px] font-normal text-white/40">v{import.meta.env.PACKAGE_VERSION}</span></h1>
             <p className="text-xs text-white/60">Premier Tech Systems & Automation</p>
           </div>
         </div>
@@ -48,6 +48,28 @@ export default function Layout({ children, currentPage, onNavigate }: LayoutProp
           >
             <FileText size={18} />
             Notes de version
+          </button>
+          <button
+            onClick={() => onNavigate('help')}
+            className={`flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${
+              currentPage === 'help'
+                ? 'bg-light-blue text-navy font-medium'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <HelpCircle size={18} />
+            Aide
+          </button>
+          <button
+            onClick={() => onNavigate('admin')}
+            className={`flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors ${
+              currentPage === 'admin'
+                ? 'bg-light-blue text-navy font-medium'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Shield size={18} />
+            Admin
           </button>
           <button
             onClick={() => onNavigate('settings')}

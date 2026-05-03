@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { PdcaFile, Workstream, Action, ParsedWorkstream, ReleaseNote } from '../types';
+import type { PdcaFile, Workstream, Action, ParsedWorkstream, ReleaseNote, HelpArticle, NewWorkstreamData } from '../types';
 
 export async function upsertFile(file: PdcaFile): Promise<void> {
   await db.files.put(file);
@@ -151,4 +151,63 @@ export async function upsertReleaseNote(note: ReleaseNote): Promise<void> {
 
 export async function getAllReleaseNotes(): Promise<ReleaseNote[]> {
   return db.release_notes.toArray();
+}
+
+// === Admin operations ===
+
+export async function addWorkstream(
+  memberCode: string,
+  data: NewWorkstreamData,
+): Promise<number> {
+  const fileId = `TEAM-OPS-PDCA-${memberCode}`;
+  const file = await db.files.get(fileId);
+  if (!file) throw new Error(`Fichier PDCA introuvable pour ${memberCode}`);
+
+  const existing = await db.workstreams.where('file_id').equals(fileId).toArray();
+  const maxWsNumber = existing.reduce((max, w) => Math.max(max, w.ws_number), 0);
+
+  const wsId = await db.workstreams.add({
+    file_id: fileId,
+    ws_number: maxWsNumber + 1,
+    title: data.title,
+    lead: '',
+    member_code: memberCode,
+    accountable: 'BROS2',
+    status: data.status,
+    echeance: '',
+    comment: '',
+    phase_p: data.phase_p || null,
+    phase_d: data.phase_d || null,
+    phase_c: data.phase_c || null,
+    phase_a: data.phase_a || null,
+    lien_ga: null,
+    dependances: null,
+    note_politique: null,
+  });
+
+  await markFileDirty(fileId);
+  return wsId as number;
+}
+
+// === Help article operations ===
+
+export async function addHelpArticle(
+  article: Omit<HelpArticle, 'id'>,
+): Promise<number> {
+  return (await db.help_articles.add(article)) as number;
+}
+
+export async function updateHelpArticle(
+  id: number,
+  updates: Partial<HelpArticle>,
+): Promise<void> {
+  await db.help_articles.update(id, updates);
+}
+
+export async function deleteHelpArticle(id: number): Promise<void> {
+  await db.help_articles.delete(id);
+}
+
+export async function getAllHelpArticles(): Promise<HelpArticle[]> {
+  return db.help_articles.toArray();
 }
